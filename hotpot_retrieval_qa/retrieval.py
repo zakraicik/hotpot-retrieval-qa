@@ -1,0 +1,83 @@
+import os
+import logging
+import pickle
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
+
+class Retrieval:
+
+    def __init__(
+        self,
+        cache_dir=os.path.join(os.getcwd(), "hotpot_retrieval_qa", "data", "cached"),
+    ):
+        self.cache_dir = cache_dir
+        self.embedder = SentenceTransformer("all-MiniLM-L6-v2")
+        self.index = None
+        self.documents = None
+        self._load_index()
+
+    def _load_index(self):
+        try:
+            self.index = faiss.read_index(f"{self.cache_dir}/faiss.index")
+            with open(f"{self.cache_dir}/documents.pkl", "rb") as f:
+                self.documents = pickle.load(f)
+            logging.info(f"Loaded index with {len(self.documents)} documents")
+
+        except FileNotFoundError as e:
+            logging.error(f"Index files not found. Run build_index.py first.")
+            raise
+
+    def retrieve(self, query: str, k: int = 5):
+        if self.index is None or self.documents is None:
+            logging.error(f"Index files not found. Run build_index.py first.")
+            raise
+
+        query_embedding = self.embedder.encode([query])
+        query_embedding = query_embedding / np.linalg.norm(
+            query_embedding, axis=1, keepdims=True
+        )
+
+        scores, indices = self.index.search(query_embedding.astype("float32"), k)
+
+        results = []
+        for score, idx in zip(scores[0], indices[0]):
+            if idx != -1:
+                results.append(
+                    {
+                        "document": self.documents[idx],
+                        "score": float(score),
+                        "index": int(idx),
+                    }
+                )
+
+        return results
+
+
+def test_retrieval():
+    """Test the retrieval function"""
+    retriever = Retrieval()
+
+    test_queries = [
+        "What nationality is the director of Lagaan?",
+        "Who directed the movie Lagaan?",
+        "Indian film directors",
+    ]
+
+    for query in test_queries:
+        print(f"\nQuery: {query}")
+        results = retriever.retrieve(query, k=5)
+
+        for i, result in enumerate(results):
+            print(f"{i+1}. Score: {result['score']:.3f}")
+            print(f"   Text: {result['document'][:100]}...")
+
+
+if __name__ == "__main__":
+    test_retrieval()
