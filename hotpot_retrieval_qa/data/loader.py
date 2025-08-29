@@ -1,7 +1,7 @@
-from datasets import load_dataset
 import logging
 import os
 from pathlib import Path
+from datasets import load_dataset
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,9 +27,3 @@ def load_hotpotqa_dataset(
 
     logging.info(f"Loaded {len(dataset)} examples from {split} split")
     return dataset
-
-
-if __name__ == "__main__":
-
-    train_dataset = load_hotpotqa_dataset("train")
-    validation_dataset = load_hotpotqa_dataset("validation")

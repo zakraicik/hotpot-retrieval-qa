@@ -58,26 +58,3 @@ class Retrieval:
                 )
 
         return results
-
-
-def test_retrieval():
-    """Test the retrieval function"""
-    retriever = Retrieval()
-
-    test_queries = [
-        "What nationality is the director of Lagaan?",
-        "Who directed the movie Lagaan?",
-        "Indian film directors",
-    ]
-
-    for query in test_queries:
-        print(f"\nQuery: {query}")
-        results = retriever.retrieve(query, k=5)
-
-        for i, result in enumerate(results):
-            print(f"{i+1}. Score: {result['score']:.3f}")
-            print(f"   Text: {result['document'][:100]}...")
-
-
-if __name__ == "__main__":
-    test_retrieval()
