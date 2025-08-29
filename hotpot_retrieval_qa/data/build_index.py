@@ -1,11 +1,10 @@
-from sentence_transformers import SentenceTransformer
-from datasets import load_dataset
 import faiss
 import os
 import numpy as np
 import pickle
-from hotpot_retrieval_qa.data.loader import load_hotpotqa_dataset
 import logging
+from hotpot_retrieval_qa.data.loader import load_hotpotqa_dataset
+from sentence_transformers import SentenceTransformer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,7 +44,3 @@ def build_vector_index(
     faiss.write_index(index, f"{cache_dir}/faiss.index")
 
     return documents, embeddings, index
-
-
-if __name__ == "__main__":
-    build_vector_index()
