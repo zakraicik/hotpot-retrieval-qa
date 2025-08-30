@@ -4,23 +4,24 @@ A question-answering system that performs multi-hop reasoning using DSPy and the
 
 ## Features
 
-- **Multi-hop reasoning**: Connects information across multiple documents
+- **Multi-hop reasoning**: Connects information across multiple documents with iterative retrieval
+- **Query rewriting**: Intelligently reformulates questions into better search queries
+- **Chunk ranking**: Reorders retrieved documents by relevance to improve context quality
 - **Scientific evaluation**: Comprehensive metrics and experiment tracking
-- **Performance analysis**: Breakdown by question type and difficulty
 - **Experiment management**: JSON-based tracking of all evaluation runs
 
 ## Setup
 
-1. Install dependencies:
-
-```bash
-poetry install
-```
-
-2. Create `.env` file:
+1. Create `.env` file:
 
 ```bash
 ANTHROPIC_API_KEY=your-api-key-here
+```
+
+2. Install dependencies:
+
+```bash
+poetry install
 ```
 
 ## Quick Start
@@ -33,20 +34,20 @@ ANTHROPIC_API_KEY=your-api-key-here
 
 ```bash
 # Download training data (default)
-python hotpot_retrieval_qa/data/loader.py
+poetry run python hotpot_retrieval_qa/data/loader.py
 
 # Or specify split and cache location
-python hotpot_retrieval_qa/data/loader.py --split validation --cache-dir /custom/path
+poetry run python hotpot_retrieval_qa/data/loader.py --split validation --cache-dir /custom/path
 ```
 
 2. Build the vector index:
 
 ```bash
 # Build with all available data (recommended)
-python hotpot_retrieval_qa/data/build_index.py
+poetry run python hotpot_retrieval_qa/data/build_index.py
 
 # Or limit examples for faster testing
-python hotpot_retrieval_qa/data/build_index.py --max-examples 5000 --cache-dir /custom/path
+poetry run python hotpot_retrieval_qa/data/build_index.py --max-examples 5000 --cache-dir /custom/path
 ```
 
 This creates the required files:
@@ -57,63 +58,46 @@ This creates the required files:
 
 **Note**: Using all training data provides better coverage than a limited sample
 
-### Step 1: Run Multi-Hop QA
+### Step 1: Interactive Usage
 
-```python
-from hotpot_retrieval_qa.retrieval import Retrieval
-from hotpot_retrieval_qa.multihop import QA
+Start Python and interact with the system directly:
 
-# Initialize system
-retriever = Retrieval()
-qa = QA(retriever)
-
-# Ask complex questions
-result = qa("What nationality is the director of Lagaan?")
-
-print(f"Answer: {result.answer}")
-print(f"Reasoning: {result.reasoning_steps}")
-print(f"Confidence: {result.confidence}")
+```bash
+poetry run python
 ```
 
-### Step 2: Evaluate Performance
-
 ```python
-from hotpot_retrieval_qa.evaluation import evaluate_and_save
+>>> from hotpot_retrieval_qa.retrieval import Retrieval
+>>> from hotpot_retrieval_qa.multihop import QA
+>>> retriever = Retrieval()
+>>> qa = QA(retriever)
 
-# Run systematic evaluation
-experiment_id = evaluate_and_save(
-    qa_system=qa,
-    experiment_name="baseline",
-    experiment_description="Initial system performance",
-    max_examples=50
-)
-```
-
-### Step 3: Compare Results
-
-```python
-from hotpot_retrieval_qa.utils.evaluation import compare_experiments, list_experiments
-
-# See all experiments
-list_experiments()
-
-# Compare specific experiments
-compare_experiments(['baseline', 'improved_version'])
-```
+>>> result = qa("What nationality is the director of Lagaan?")
 
 ## How It Works
 
-The system performs multi-hop reasoning in three steps:
+The system performs multi-hop reasoning with enhanced retrieval:
 
-1. **Question Analysis**: Breaks down complex questions into search queries
+1. **Query Rewriting**: Transforms complex questions into multiple focused search queries
 2. **Iterative Retrieval**: Performs multiple retrieval "hops" to gather evidence
-3. **Chain-of-Thought**: Synthesizes information to generate the final answer
+3. **Chunk Ranking**: Reorders retrieved documents by relevance to the original question
+4. **Chain-of-Thought**: Synthesizes information to generate the final answer
 
 Example multi-hop question: _"What nationality is the director of Lagaan?"_
 
+- **Query Rewriting**: Generates focused queries like "Lagaan director" and "director nationality"
 - **Hop 1**: Search for "Lagaan director" → finds "Ashutosh Gowariker"
 - **Hop 2**: Search for "Ashutosh Gowariker nationality" → finds "Indian"
+- **Ranking**: Reorders chunks by relevance to original question
 - **Synthesis**: Combines facts to answer "Indian"
+
+## Example Questions
+
+The system excels at multi-hop questions requiring sequential reasoning:
+
+- **"What nationality is the director of Lagaan?"** - Requires finding the director first, then their nationality
+- **"What is the capital of the country where Mount Everest is located?"** - Needs to identify the country, then find its capital
+- **"What movie came out first? Titanic or Interstellar?"** - Requires looking up release dates for comparison
 
 ## Key Components
 
@@ -125,85 +109,13 @@ Example multi-hop question: _"What nationality is the director of Lagaan?"_
 ### `hotpot_retrieval_qa/`
 
 - `retrieval.py` - Vector similarity search
-- `dspy_setup.py` - DSPy configuration with Claude
-- `multihop.py` - Multi-hop reasoning module
+- `dspy_setup.py` - DSPy configuration with Claude (1500 tokens)
+- `multihop.py` - Multi-hop reasoning with query rewriting and chunk ranking
 - `evaluation.py` - Main evaluation orchestration and experiment tracking
 - `experiment_tracker.py` - Experiment management and JSON storage
 - `utils/evaluation.py` - Core metrics (EM, F1) and analysis utilities
 
-### Evaluation System
-
-The evaluation system provides:
-
-- **Standard Metrics**: Exact Match (EM) and F1 scores following HotpotQA conventions
-- **Category Analysis**: Performance breakdown by question type (bridge/comparison) and difficulty
-- **Failure Analysis**: Identification of low-performing examples
-- **Experiment Tracking**: JSON files storing complete evaluation results
-- **Comparison Tools**: Side-by-side performance analysis across experiments
-
-Each evaluation creates a timestamped JSON file in `hotpot_retrieval_qa/experiments/` containing:
-
-- Overall metrics (EM, F1, speed)
-- Detailed per-question results
-- System configuration
-- Category-wise performance breakdown
-
-## Configuration
-
-### Model Selection
-
-Edit `dspy_setup.py` to change the language model:
-
-```python
-lm = dspy.LM(
-    model="anthropic/claude-3-5-sonnet-20240620",
-    api_key=api_key,
-    max_tokens=500
-)
-```
-
-### Index Size and Data
-
-Control how much training data to use:
-
-```bash
-# Use all available training data (best performance)
-python hotpot_retrieval_qa/data/build_index.py
-
-# Limit for faster prototyping
-python hotpot_retrieval_qa/data/build_index.py --max-examples 5000
-```
-
-## Example Output
-
-```
-🔥 EXPERIMENT: baseline
-============================================================
-📊 Overall Performance:
-   • Exact Match: 0.340
-   • F1 Score: 0.485
-   • Total Examples: 100
-   • Speed: 0.8 q/sec
-
-📈 By Question Type:
-   • bridge: EM=0.380, F1=0.520 (n=60)
-   • comparison: EM=0.275, F1=0.425 (n=40)
-
-🎯 By Difficulty:
-   • easy: EM=0.450, F1=0.580 (n=30)
-   • medium: EM=0.320, F1=0.460 (n=45)
-   • hard: EM=0.240, F1=0.410 (n=25)
-============================================================
-```
-
-## Evaluation Workflow
-
-1. **Baseline**: `evaluate_and_save(qa_system, "baseline")`
-2. **Enhance**: Implement improvements (hybrid retrieval, better prompts, etc.)
-3. **Re-evaluate**: `evaluate_and_save(improved_system, "enhancement_v1")`
-4. **Compare**: `compare_experiments(['baseline', 'enhancement_v1'])`
-5. **Iterate**: Use metrics to guide further improvements
-
 ## License
 
 MIT
+```
