@@ -2,6 +2,13 @@
 
 A question-answering system that performs multi-hop reasoning using DSPy and the HotpotQA dataset. The system can connect information across multiple documents to answer complex questions requiring sequential reasoning.
 
+## Features
+
+- **Multi-hop reasoning**: Connects information across multiple documents
+- **Scientific evaluation**: Comprehensive metrics and experiment tracking
+- **Performance analysis**: Breakdown by question type and difficulty
+- **Experiment management**: JSON-based tracking of all evaluation runs
+
 ## Setup
 
 1. Install dependencies:
@@ -25,13 +32,21 @@ ANTHROPIC_API_KEY=your-api-key-here
 1. Download HotpotQA dataset:
 
 ```bash
+# Download training data (default)
 python hotpot_retrieval_qa/data/loader.py
+
+# Or specify split and cache location
+python hotpot_retrieval_qa/data/loader.py --split validation --cache-dir /custom/path
 ```
 
 2. Build the vector index:
 
 ```bash
+# Build with all available data (recommended)
 python hotpot_retrieval_qa/data/build_index.py
+
+# Or limit examples for faster testing
+python hotpot_retrieval_qa/data/build_index.py --max-examples 5000 --cache-dir /custom/path
 ```
 
 This creates the required files:
@@ -40,7 +55,7 @@ This creates the required files:
 - `documents.pkl` - Document text
 - `embeddings.npy` - Document embeddings
 
-**Note**: Default uses 1000 examples for prototyping. Edit `max_examples` in `build_index.py` for better coverage.
+**Note**: Using all training data provides better coverage than a limited sample
 
 ### Step 1: Run Multi-Hop QA
 
@@ -60,12 +75,30 @@ print(f"Reasoning: {result.reasoning_steps}")
 print(f"Confidence: {result.confidence}")
 ```
 
-### Step 2: Test with Examples
+### Step 2: Evaluate Performance
 
-Run the complete example:
+```python
+from hotpot_retrieval_qa.evaluation import evaluate_and_save
 
-```bash
-python hotpot_retrieval_qa/example.py
+# Run systematic evaluation
+experiment_id = evaluate_and_save(
+    qa_system=qa,
+    experiment_name="baseline",
+    experiment_description="Initial system performance",
+    max_examples=50
+)
+```
+
+### Step 3: Compare Results
+
+```python
+from hotpot_retrieval_qa.utils.evaluation import compare_experiments, list_experiments
+
+# See all experiments
+list_experiments()
+
+# Compare specific experiments
+compare_experiments(['baseline', 'improved_version'])
 ```
 
 ## How It Works
@@ -94,7 +127,26 @@ Example multi-hop question: _"What nationality is the director of Lagaan?"_
 - `retrieval.py` - Vector similarity search
 - `dspy_setup.py` - DSPy configuration with Claude
 - `multihop.py` - Multi-hop reasoning module
-- `example.py` - Demo script
+- `evaluation.py` - Main evaluation orchestration and experiment tracking
+- `experiment_tracker.py` - Experiment management and JSON storage
+- `utils/evaluation.py` - Core metrics (EM, F1) and analysis utilities
+
+### Evaluation System
+
+The evaluation system provides:
+
+- **Standard Metrics**: Exact Match (EM) and F1 scores following HotpotQA conventions
+- **Category Analysis**: Performance breakdown by question type (bridge/comparison) and difficulty
+- **Failure Analysis**: Identification of low-performing examples
+- **Experiment Tracking**: JSON files storing complete evaluation results
+- **Comparison Tools**: Side-by-side performance analysis across experiments
+
+Each evaluation creates a timestamped JSON file in `hotpot_retrieval_qa/experiments/` containing:
+
+- Overall metrics (EM, F1, speed)
+- Detailed per-question results
+- System configuration
+- Category-wise performance breakdown
 
 ## Configuration
 
@@ -110,31 +162,48 @@ lm = dspy.LM(
 )
 ```
 
-### Index Size
+### Index Size and Data
 
-Edit `build_index.py` to change dataset size:
+Control how much training data to use:
 
-```python
-build_vector_index(max_examples=5000)  # More examples = better coverage
+```bash
+# Use all available training data (best performance)
+python hotpot_retrieval_qa/data/build_index.py
+
+# Limit for faster prototyping
+python hotpot_retrieval_qa/data/build_index.py --max-examples 5000
 ```
 
 ## Example Output
 
 ```
-Test 1: What nationality is the director of Lagaan?
+🔥 EXPERIMENT: baseline
 ============================================================
-Queries used: ['What nationality is the director of Lagaan?', 'Ashutosh Gowariker nationality']
-Number of hops: 2
-Reasoning: 1. Lagaan was directed by Ashutosh Gowariker
-2. Ashutosh Gowariker is described as an "Indian film director"
-Answer: Indian
-Confidence: high
+📊 Overall Performance:
+   • Exact Match: 0.340
+   • F1 Score: 0.485
+   • Total Examples: 100
+   • Speed: 0.8 q/sec
+
+📈 By Question Type:
+   • bridge: EM=0.380, F1=0.520 (n=60)
+   • comparison: EM=0.275, F1=0.425 (n=40)
+
+🎯 By Difficulty:
+   • easy: EM=0.450, F1=0.580 (n=30)
+   • medium: EM=0.320, F1=0.460 (n=45)
+   • hard: EM=0.240, F1=0.410 (n=25)
+============================================================
 ```
 
-## Troubleshooting
+## Evaluation Workflow
 
-**"Index files not found"**: Run `build_index.py` first
+1. **Baseline**: `evaluate_and_save(qa_system, "baseline")`
+2. **Enhance**: Implement improvements (hybrid retrieval, better prompts, etc.)
+3. **Re-evaluate**: `evaluate_and_save(improved_system, "enhancement_v1")`
+4. **Compare**: `compare_experiments(['baseline', 'enhancement_v1'])`
+5. **Iterate**: Use metrics to guide further improvements
 
-**Low confidence answers**: Increase `max_examples` in `build_index.py` for better document coverage
+## License
 
-**API errors**: Check your `ANTHROPIC_API_KEY` environment variable
+MIT
