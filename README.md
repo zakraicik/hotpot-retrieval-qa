@@ -119,7 +119,3 @@ The system excels at multi-hop questions requiring sequential reasoning:
 ## License
 
 MIT
-
-```
-
-```
