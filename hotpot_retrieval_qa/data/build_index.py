@@ -1,3 +1,4 @@
+import argparse
 import faiss
 import os
 import numpy as np
@@ -13,13 +14,15 @@ logging.basicConfig(
 
 
 def build_vector_index(
-    max_examples=1000,
+    max_examples=None,
     cache_dir=os.path.join(os.getcwd(), "hotpot_retrieval_qa", "data", "cached"),
 ):
-    dataset = load_hotpotqa_dataset("train")
-    dataset = dataset.select(range(min(max_examples, len(dataset))))
+    dataset = load_hotpotqa_dataset("train", cache_dir=cache_dir)
 
-    logging.info(f"Sampled {len(dataset)} records from dataset")
+    if max_examples:
+        dataset = dataset.select(range(min(max_examples, len(dataset))))
+
+    logging.info(f"Using {len(dataset)} records from dataset")
 
     documents = []
     for example in dataset:
@@ -43,4 +46,33 @@ def build_vector_index(
         pickle.dump(documents, f)
     faiss.write_index(index, f"{cache_dir}/faiss.index")
 
+    logging.info(f"Vector index built and saved to {cache_dir}")
     return documents, embeddings, index
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Build vector index for HotpotQA dataset"
+    )
+    parser.add_argument(
+        "--max-examples",
+        type=int,
+        default=None,
+        help="Maximum number of examples to use from dataset (default: use all)",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        type=str,
+        default=os.path.join(os.getcwd(), "hotpot_retrieval_qa", "data", "cached"),
+        help="Directory to save index files (default: ./hotpot_retrieval_qa/data/cached)",
+    )
+
+    args = parser.parse_args()
+
+    build_vector_index(max_examples=args.max_examples, cache_dir=args.cache_dir)
+
+    logging.info("Index building completed successfully!")
+
+
+if __name__ == "__main__":
+    main()
