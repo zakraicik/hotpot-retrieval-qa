@@ -73,6 +73,7 @@ poetry run python
 >>> qa = QA(retriever)
 
 >>> result = qa("What nationality is the director of Lagaan?")
+```
 
 ## How It Works
 
@@ -118,4 +119,7 @@ The system excels at multi-hop questions requiring sequential reasoning:
 ## License
 
 MIT
+
+```
+
 ```
