@@ -1,0 +1,245 @@
+{
+  "id": "test_baseline_20250830_084031_9185467e",
+  "name": "test_baseline",
+  "description": "Testing real QA system",
+  "created_at": "2025-08-30T08:41:27.520142",
+  "config": {
+    "split": "validation",
+    "max_examples": 5,
+    "system_config": {}
+  },
+  "results": {
+    "metrics": {
+      "exact_match": 0.0,
+      "f1": 0.020512820512820513,
+      "total_examples": 5,
+      "elapsed_time_seconds": 54.010257959365845,
+      "questions_per_second": 0.09257500683965826
+    },
+    "category_analysis": {
+      "by_type": {
+        "comparison": {
+          "exact_match": 0.0,
+          "f1": 0.0,
+          "count": 2
+        },
+        "bridge": {
+          "exact_match": 0.0,
+          "f1": 0.034188034188034185,
+          "count": 3
+        }
+      },
+      "by_level": {
+        "hard": {
+          "exact_match": 0.0,
+          "f1": 0.020512820512820513,
+          "count": 5
+        }
+      }
+    },
+    "detailed_results": [
+      {
+        "id": "5a8b57f25542995d1e6f1371",
+        "prediction": "I cannot determine whether Scott Derrickson and Ed Wood were of the same nationality because while the context states that Scott Derrickson is American, it does not provide information about Ed Wood's nationality.",
+        "ground_truth": "yes",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "Were Scott Derrickson and Ed Wood of the same nationality?",
+        "type": "comparison",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "Were Scott Derrickson and Ed Wood of the same nationality?",
+            "Ed Wood nationality",
+            "Ed Wood nationality"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. First, I need to identify the nationalities of both Scott Derrickson and Ed Wood.\n2. From the context, I can see that Scott Derrickson is described as \"an American director, screenwriter and producer.\"\n3. Looking for information about Ed Wood in the context, I notice that the context doesn't mention Ed Wood specifically.\n4. The context mentions Edward George \"Ed\" Skrein, who is described as \"an English actor and rapper,\" but this is not the same person as Ed Wood (who was a film director).\n5. Since I don't have information about Ed Wood's nationality from the provided context, I cannot determine if he and Scott Derrickson were of the same nationality."
+        }
+      },
+      {
+        "id": "5a8c7595554299585d9e36b6",
+        "prediction": "I cannot determine what government position was held by the woman who portrayed Corliss Archer in the film \"Kiss and Tell\" because the provided context does not contain information about who played this character or any government positions held by actresses mentioned.",
+        "ground_truth": "Chief of Protocol",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+        "type": "bridge",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+            "Who played Corliss Archer in Kiss and Tell film",
+            "Who played Corliss Archer in the film Kiss and Tell?"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. The question asks about the government position held by the woman who portrayed Corliss Archer in the film \"Kiss and Tell.\"\n2. First, I need to identify who played Corliss Archer in \"Kiss and Tell.\"\n3. Looking through the context, I see mentions of:\n   - Marlene Kaminsky playing \"the woman\" in an unspecified film\n   - Films like \"CQ,\" \"Kiss Kiss Bang Bang,\" and \"Small Apartments\"\n   - An album called \"Kiss & Tell\" released in 2009\n4. There is no specific mention of the film \"Kiss and Tell\" or who played Corliss Archer in it.\n5. Without identifying the actress, I cannot determine what government position she held.\n6. The context does not provide information about government positions held by any of the actresses mentioned.\n7. Therefore, I cannot answer the question based on the provided context."
+        }
+      },
+      {
+        "id": "5a85ea095542994775f606a8",
+        "prediction": "Based on the provided context, I cannot identify a science fantasy young adult series that matches the description of being told in first person with companion books about enslaved worlds and alien species. The context mentions several series including one with \"Magic Study\" and \"Fire Study,\" \"The Chronicles of Thomas Covenant, the Unbeliever,\" and a \"New World\" trilogy, but none are described with the specific characteristics requested in the question.",
+        "ground_truth": "Animorphs",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
+        "type": "bridge",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
+            "science fantasy young adult series first person enslaved worlds alien species",
+            "science fantasy young adult series first person enslaved worlds alien species"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. First, I need to identify what criteria I'm looking for:\n   - Science fantasy genre\n   - Young adult target audience\n   - Told in first person\n   - Has companion books about enslaved worlds and alien species\n\n2. Let's examine the series mentioned in the context:\n   - A series with books \"Magic Study\" and \"Fire Study\" - No mention of science fantasy elements, first-person narration, or companion books about enslaved worlds.\n   - \"The Chronicles of Thomas Covenant, the Unbeliever\" - This is mentioned twice but with no details about narrative perspective or companion books.\n   - A television series about \"wolfbloods\" - This is a TV show, not a book series.\n   - \"New World\" trilogy - No details provided about its content or narrative style.\n\n3. None of the series mentioned in the context clearly match all the criteria from the question. The context doesn't provide information about:\n   - Which series are science fantasy\n   - Which are told in first person\n   - Which have companion books about enslaved worlds and alien species"
+        }
+      },
+      {
+        "id": "5adbf0a255429947ff17385a",
+        "prediction": "I cannot determine whether the Laleli Mosque and Esma Sultan Mansion are located in the same neighborhood based on the provided context. The context does not contain specific information about the location of either the Laleli Mosque or the Esma Sultan Mansion.",
+        "ground_truth": "no",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
+        "type": "comparison",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
+            "Laleli Mosque location Istanbul",
+            "Laleli Mosque location Istanbul"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. The question asks if the Laleli Mosque and Esma Sultan Mansion are in the same neighborhood.\n2. To answer this, I need location information for both landmarks.\n3. Examining the context, I find:\n   - Information about Sultan Ahmed Mosque in Istanbul\n   - Mentions of nearby landmarks like Istanbul University, Beyaz\u0131t Square, and \u015eehzade Mosque\n   - Some information about a mosque \"located in the historical center of the city, on the Divanyolu Street\" (likely referring to Sultan Ahmed Mosque)\n4. The context does not contain any specific information about:\n   - The location of Laleli Mosque\n   - The location of Esma Sultan Mansion\n5. Without information about the locations of these two specific landmarks, I cannot determine if they are in the same neighborhood."
+        }
+      },
+      {
+        "id": "5a8e3ea95542995a26add48d",
+        "prediction": "I cannot determine the answer based on the provided context. The context does not contain information about the romantic comedy \"Big Stone Gap\" or its director, nor does it mention where this director is based in New York.",
+        "ground_truth": "Greenwich Village, New York City",
+        "exact_match": 0,
+        "f1": 0.10256410256410256,
+        "question": "The director of the romantic comedy \"Big Stone Gap\" is based in what New York city?",
+        "type": "bridge",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "The director of the romantic comedy \"Big Stone Gap\" is based in what New York city?",
+            "Who directed the movie \"Big Stone Gap\"",
+            "Who directed the movie \"Big Stone Gap\"?"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. The question asks about the director of the romantic comedy \"Big Stone Gap\" and which New York city they are based in.\n2. I need to first identify the director of \"Big Stone Gap.\"\n3. Reviewing the context, I find information about several films and directors:\n   - A New York production directed by Peter Glenville\n   - A comedy directed by Leigh Silverman\n   - \"Old Stone\" by an unnamed director\n   - \"The Big Shot\" directed by Ralph Murphy\n   - \"The Big Sky\" directed by Howard Hawks\n   - A movie directed by Gary Sinise\n4. None of these mentions \"Big Stone Gap\" specifically.\n5. Without knowing who directed \"Big Stone Gap,\" I cannot determine which New York city they are based in.\n6. The context does not provide the necessary information to answer this question."
+        }
+      }
+    ],
+    "failure_analysis": [
+      {
+        "id": "5a8b57f25542995d1e6f1371",
+        "prediction": "I cannot determine whether Scott Derrickson and Ed Wood were of the same nationality because while the context states that Scott Derrickson is American, it does not provide information about Ed Wood's nationality.",
+        "ground_truth": "yes",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "Were Scott Derrickson and Ed Wood of the same nationality?",
+        "type": "comparison",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "Were Scott Derrickson and Ed Wood of the same nationality?",
+            "Ed Wood nationality",
+            "Ed Wood nationality"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. First, I need to identify the nationalities of both Scott Derrickson and Ed Wood.\n2. From the context, I can see that Scott Derrickson is described as \"an American director, screenwriter and producer.\"\n3. Looking for information about Ed Wood in the context, I notice that the context doesn't mention Ed Wood specifically.\n4. The context mentions Edward George \"Ed\" Skrein, who is described as \"an English actor and rapper,\" but this is not the same person as Ed Wood (who was a film director).\n5. Since I don't have information about Ed Wood's nationality from the provided context, I cannot determine if he and Scott Derrickson were of the same nationality."
+        }
+      },
+      {
+        "id": "5a8c7595554299585d9e36b6",
+        "prediction": "I cannot determine what government position was held by the woman who portrayed Corliss Archer in the film \"Kiss and Tell\" because the provided context does not contain information about who played this character or any government positions held by actresses mentioned.",
+        "ground_truth": "Chief of Protocol",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+        "type": "bridge",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+            "Who played Corliss Archer in Kiss and Tell film",
+            "Who played Corliss Archer in the film Kiss and Tell?"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. The question asks about the government position held by the woman who portrayed Corliss Archer in the film \"Kiss and Tell.\"\n2. First, I need to identify who played Corliss Archer in \"Kiss and Tell.\"\n3. Looking through the context, I see mentions of:\n   - Marlene Kaminsky playing \"the woman\" in an unspecified film\n   - Films like \"CQ,\" \"Kiss Kiss Bang Bang,\" and \"Small Apartments\"\n   - An album called \"Kiss & Tell\" released in 2009\n4. There is no specific mention of the film \"Kiss and Tell\" or who played Corliss Archer in it.\n5. Without identifying the actress, I cannot determine what government position she held.\n6. The context does not provide information about government positions held by any of the actresses mentioned.\n7. Therefore, I cannot answer the question based on the provided context."
+        }
+      },
+      {
+        "id": "5a85ea095542994775f606a8",
+        "prediction": "Based on the provided context, I cannot identify a science fantasy young adult series that matches the description of being told in first person with companion books about enslaved worlds and alien species. The context mentions several series including one with \"Magic Study\" and \"Fire Study,\" \"The Chronicles of Thomas Covenant, the Unbeliever,\" and a \"New World\" trilogy, but none are described with the specific characteristics requested in the question.",
+        "ground_truth": "Animorphs",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
+        "type": "bridge",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
+            "science fantasy young adult series first person enslaved worlds alien species",
+            "science fantasy young adult series first person enslaved worlds alien species"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. First, I need to identify what criteria I'm looking for:\n   - Science fantasy genre\n   - Young adult target audience\n   - Told in first person\n   - Has companion books about enslaved worlds and alien species\n\n2. Let's examine the series mentioned in the context:\n   - A series with books \"Magic Study\" and \"Fire Study\" - No mention of science fantasy elements, first-person narration, or companion books about enslaved worlds.\n   - \"The Chronicles of Thomas Covenant, the Unbeliever\" - This is mentioned twice but with no details about narrative perspective or companion books.\n   - A television series about \"wolfbloods\" - This is a TV show, not a book series.\n   - \"New World\" trilogy - No details provided about its content or narrative style.\n\n3. None of the series mentioned in the context clearly match all the criteria from the question. The context doesn't provide information about:\n   - Which series are science fantasy\n   - Which are told in first person\n   - Which have companion books about enslaved worlds and alien species"
+        }
+      },
+      {
+        "id": "5adbf0a255429947ff17385a",
+        "prediction": "I cannot determine whether the Laleli Mosque and Esma Sultan Mansion are located in the same neighborhood based on the provided context. The context does not contain specific information about the location of either the Laleli Mosque or the Esma Sultan Mansion.",
+        "ground_truth": "no",
+        "exact_match": 0,
+        "f1": 0.0,
+        "question": "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
+        "type": "comparison",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
+            "Laleli Mosque location Istanbul",
+            "Laleli Mosque location Istanbul"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. The question asks if the Laleli Mosque and Esma Sultan Mansion are in the same neighborhood.\n2. To answer this, I need location information for both landmarks.\n3. Examining the context, I find:\n   - Information about Sultan Ahmed Mosque in Istanbul\n   - Mentions of nearby landmarks like Istanbul University, Beyaz\u0131t Square, and \u015eehzade Mosque\n   - Some information about a mosque \"located in the historical center of the city, on the Divanyolu Street\" (likely referring to Sultan Ahmed Mosque)\n4. The context does not contain any specific information about:\n   - The location of Laleli Mosque\n   - The location of Esma Sultan Mansion\n5. Without information about the locations of these two specific landmarks, I cannot determine if they are in the same neighborhood."
+        }
+      },
+      {
+        "id": "5a8e3ea95542995a26add48d",
+        "prediction": "I cannot determine the answer based on the provided context. The context does not contain information about the romantic comedy \"Big Stone Gap\" or its director, nor does it mention where this director is based in New York.",
+        "ground_truth": "Greenwich Village, New York City",
+        "exact_match": 0,
+        "f1": 0.10256410256410256,
+        "question": "The director of the romantic comedy \"Big Stone Gap\" is based in what New York city?",
+        "type": "bridge",
+        "level": "hard",
+        "system_info": {
+          "queries_used": [
+            "The director of the romantic comedy \"Big Stone Gap\" is based in what New York city?",
+            "Who directed the movie \"Big Stone Gap\"",
+            "Who directed the movie \"Big Stone Gap\"?"
+          ],
+          "num_hops": 3,
+          "confidence": "low",
+          "reasoning_steps": "1. The question asks about the director of the romantic comedy \"Big Stone Gap\" and which New York city they are based in.\n2. I need to first identify the director of \"Big Stone Gap.\"\n3. Reviewing the context, I find information about several films and directors:\n   - A New York production directed by Peter Glenville\n   - A comedy directed by Leigh Silverman\n   - \"Old Stone\" by an unnamed director\n   - \"The Big Shot\" directed by Ralph Murphy\n   - \"The Big Sky\" directed by Howard Hawks\n   - A movie directed by Gary Sinise\n4. None of these mentions \"Big Stone Gap\" specifically.\n5. Without knowing who directed \"Big Stone Gap,\" I cannot determine which New York city they are based in.\n6. The context does not provide the necessary information to answer this question."
+        }
+      }
+    ]
+  }
+}
