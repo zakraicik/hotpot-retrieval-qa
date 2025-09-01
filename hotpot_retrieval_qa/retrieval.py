@@ -15,7 +15,7 @@ class Retrieval:
 
     def __init__(
         self,
-        cache_dir=os.path.join(os.getcwd(), "hotpot_retrieval_qa", "data", "cached"),
+        cache_dir=os.path.join(os.getcwd(), "data", "cached"),
     ):
         self.cache_dir = cache_dir
         self.embedder = SentenceTransformer("all-MiniLM-L6-v2")

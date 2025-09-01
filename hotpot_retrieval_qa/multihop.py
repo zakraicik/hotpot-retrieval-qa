@@ -1,8 +1,34 @@
 import dspy
 import pydantic
-from hotpot_retrieval_qa.dspy_setup import setup_dspy
+import asyncio
+import logging
 
-setup_dspy()
+logger = logging.getLogger(__name__)
+
+
+def _is_in_async_context():
+    """Check if we're running in an async context"""
+    try:
+        loop = asyncio.get_running_loop()
+        return loop is not None
+    except RuntimeError:
+        return False
+
+
+def _ensure_dspy_configured():
+    """Ensure DSPy is configured, but only if not already done"""
+    try:
+        # Try to access the current language model
+        current_lm = dspy.settings.lm
+        if current_lm is None:
+            raise AttributeError("No language model configured")
+        logger.info("DSPy already configured, skipping setup")
+    except (AttributeError, RuntimeError):
+        # DSPy not configured, so configure it for local use
+        logger.info("DSPy not configured, setting up for local use")
+        from hotpot_retrieval_qa.dspy_setup import setup_dspy
+
+        setup_dspy()
 
 
 class QueryResult(pydantic.BaseModel):
@@ -44,6 +70,12 @@ class MultiHopReasoning(dspy.Signature):
 class QA(dspy.Module):
     def __init__(self, retriever, max_hops=3):
         super().__init__()
+
+        # Only setup DSPy if we're not in an async context
+        # (async contexts should handle their own configuration)
+        if not _is_in_async_context():
+            _ensure_dspy_configured()
+
         self.retriever = retriever
         self.max_hops = max_hops
 
@@ -97,8 +129,7 @@ class QA(dspy.Module):
                 context_text = "\n".join([doc["document"] for doc in reordered_docs])
 
             except Exception as e:
-
-                print(f"Reranking parse error: {e}, using original order")
+                logger.warning(f"Reranking parse error: {e}, using original order")
                 context_text = "\n".join([doc["document"] for doc in docs[:5]])
 
             all_context.append(context_text)
