@@ -31,7 +31,6 @@ async def ask_question(request: QuestionRequest):
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
     try:
-        # Create a new service instance for each request to avoid shared state issues
         qa_service = QAService()
         result = await qa_service.answer_question(
             question=request.question, max_hops=request.max_hops
