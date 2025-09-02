@@ -12,14 +12,19 @@ import {
   Terminal,
   Code2,
   Zap,
+  FileText,
+  Target,
 } from "lucide-react";
 
 interface QAResponse {
   question: string;
   answer: string;
   confidence: string;
-  reasoning_steps: string;
+  reasoning_summary: string;
   queries_used: string[];
+  query_objectives: string[];
+  evidence_summaries: string[];
+  hop_conclusions: string[];
   num_hops: number;
   processing_time: number;
 }
@@ -34,7 +39,7 @@ export default function Home() {
     "What nationality is the director of Lagaan?",
     "What is the capital of the country where Mount Everest is located?",
     "What movie came out first? Titanic or Interstellar?",
-    "Who was the president when the Eiffel Tower was built?",
+    "Who was the president of the United States when the Eiffel Tower was built?",
     "What language is spoken in the birthplace of Tesla?",
   ];
 
@@ -217,7 +222,7 @@ export default function Home() {
                         Output
                       </h3>
                     </div>
-                    <p className="text-gray-100 font-mono text-sm leading-relaxed">
+                    <p className="text-xl text-gray-100 font-mono leading-relaxed">
                       {response.answer}
                     </p>
                   </div>
@@ -261,238 +266,133 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Combined Reasoning & Query Flow */}
+              {/* Reasoning Summary */}
+              <div className="bg-gray-900/30 border border-gray-800 rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="w-4 h-4 text-gray-400" />
+                  <h3 className="text-sm font-mono text-gray-300 uppercase tracking-wider">
+                    Reasoning Summary
+                  </h3>
+                </div>
+                <div className="bg-gray-950/50 border border-gray-700 rounded-lg p-4">
+                  <p className="text-sm font-mono text-gray-300 leading-relaxed whitespace-pre-line">
+                    {response.reasoning_summary ||
+                      "No reasoning summary available"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Multi-Hop Process Visualization */}
               <div className="bg-gray-900/30 border border-gray-800 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Search className="w-4 h-4 text-gray-400" />
                     <h3 className="text-sm font-mono text-gray-300 uppercase tracking-wider">
-                      Multi-Hop Reasoning Pipeline
+                      Multi-Hop Process
                     </h3>
                   </div>
                   <div className="text-xs font-mono text-gray-500">
                     {response.num_hops} hops • {response.queries_used.length}{" "}
-                    queries • {response.processing_time.toFixed(2)}s
+                    queries
                   </div>
                 </div>
 
-                {/* Combined reasoning steps with queries */}
-                <div className="space-y-6">
-                  {response.reasoning_steps
-                    .split(/\d+\.\s+/)
-                    .filter((step) => step.trim())
-                    .map((step, index) => {
-                      const stepText = step.trim();
+                <div className="space-y-8">
+                  {response.queries_used.map((query, index) => (
+                    <div key={index} className="relative">
+                      {/* Connection line to next hop */}
+                      {index < response.queries_used.length - 1 && (
+                        <div className="absolute left-6 top-20 w-px h-16 bg-gradient-to-b from-gray-600 to-transparent" />
+                      )}
 
-                      // Better parsing to separate reasoning from source references
-                      const parts = stepText.split(/[-–]\s*/);
-                      const mainReasoning = parts[0].trim();
-                      const sourceReferences = parts.slice(1);
+                      <div className="flex gap-4">
+                        {/* Hop indicator */}
+                        <div className="flex flex-col items-center">
+                          <div className="flex items-center justify-center w-12 h-12 bg-gray-800 border-2 border-gray-600 rounded-full relative">
+                            <span className="text-sm font-mono text-gray-300 font-bold">
+                              {(index + 1).toString().padStart(2, "0")}
+                            </span>
+                            <div className="absolute inset-0 bg-gray-600 rounded-full animate-ping opacity-20" />
+                          </div>
+                          <div className="mt-2 text-xs font-mono text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-700">
+                            HOP_{index + 1}
+                          </div>
+                        </div>
 
-                      // Extract quoted evidence
-                      const quotes = stepText.match(/"([^"]*)"/g) || [];
-
-                      // Clean up reasoning text more thoroughly
-                      let cleanReasoning = mainReasoning
-                        .replace(
-                          /from the (first|second|third) paragraph:?/gi,
-                          ""
-                        )
-                        .replace(/from the context:?/gi, "")
-                        .replace(
-                          /the context (refers to|states that|mentions)/gi,
-                          "The retrieved documents $1"
-                        )
-                        .replace(/\.\s*$/, "") // Remove trailing period and whitespace
-                        .replace(/\s+\.$/, "") // Remove period with preceding whitespace
-                        .replace(/\s+/g, " ") // Normalize whitespace
-                        .trim();
-
-                      // Extract any remaining context clues for better labeling
-                      const contextClues = sourceReferences
-                        .join(" ")
-                        .toLowerCase();
-                      const hasContextReference =
-                        contextClues.includes("context") ||
-                        contextClues.includes("paragraph") ||
-                        contextClues.includes("information") ||
-                        quotes.length > 0;
-
-                      // Determine the type of operation for better labeling
-                      const isSearchStep =
-                        cleanReasoning.toLowerCase().includes("identify") ||
-                        cleanReasoning.toLowerCase().includes("find") ||
-                        cleanReasoning.toLowerCase().includes("determine");
-
-                      // Get the corresponding query for this step
-                      const correspondingQuery = response.queries_used[index];
-
-                      return (
-                        <div key={index} className="relative">
-                          {/* Connection line to next step */}
-                          {index <
-                            response.reasoning_steps
-                              .split(/\d+\.\s+/)
-                              .filter((step) => step.trim()).length -
-                              1 && (
-                            <div className="absolute left-6 top-20 w-px h-16 bg-gradient-to-b from-gray-600 to-transparent" />
-                          )}
-
-                          <div className="flex gap-4">
-                            {/* Step indicator with hop info */}
-                            <div className="flex flex-col items-center">
-                              <div className="flex items-center justify-center w-12 h-12 bg-gray-800 border-2 border-gray-600 rounded-full relative">
-                                <span className="text-sm font-mono text-gray-300 font-bold">
-                                  {(index + 1).toString().padStart(2, "0")}
-                                </span>
-                                <div className="absolute inset-0 bg-gray-600 rounded-full animate-ping opacity-20" />
-                              </div>
-                              {/* Hop indicator */}
-                              <div className="mt-2 text-xs font-mono text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-700">
-                                {index === 0 ? "ROOT" : `HOP_${index}`}
-                              </div>
+                        {/* Hop content */}
+                        <div className="flex-1 space-y-4">
+                          {/* Query objective */}
+                          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Target className="w-4 h-4 text-blue-400" />
+                              <span className="text-xs font-mono text-blue-400 uppercase">
+                                Objective
+                              </span>
                             </div>
+                            <p className="text-sm font-mono text-gray-300">
+                              {(response.query_objectives &&
+                                response.query_objectives[index]) ||
+                                "Processing information"}
+                            </p>
+                          </div>
 
-                            {/* Combined step content */}
-                            <div className="flex-1 space-y-3">
-                              {/* Query that triggers this step */}
-                              {correspondingQuery && (
-                                <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                      <Layers className="w-3 h-3 text-gray-400" />
-                                      <span className="text-xs font-mono text-gray-400 uppercase">
-                                        Query Input
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs font-mono text-gray-500">
-                                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                                      <span>EXECUTED</span>
-                                    </div>
-                                  </div>
+                          {/* Generated query */}
+                          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Search className="w-4 h-4 text-green-400" />
+                              <span className="text-xs font-mono text-green-400 uppercase">
+                                Vector Search Query
+                              </span>
+                            </div>
+                            <code className="text-sm font-mono text-gray-200 bg-gray-950/80 px-3 py-2 rounded border border-gray-700 block">
+                              {query}
+                            </code>
+                          </div>
 
-                                  {/* Original question for first step */}
-                                  {index === 0 && (
-                                    <div className="mb-3 pb-3 border-b border-gray-700">
-                                      <div className="text-xs font-mono text-gray-500 mb-1 uppercase">
-                                        Original Question
-                                      </div>
-                                      <div className="text-sm font-mono text-gray-300 italic">
-                                        "{response.question}"
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Step objective */}
-                                  <div className="mb-3">
-                                    <div className="text-xs font-mono text-gray-500 mb-1 uppercase">
-                                      Step Objective
-                                    </div>
-                                    <div className="text-sm font-mono text-gray-300">
-                                      {cleanReasoning ||
-                                        `Process information for step ${
-                                          index + 1
-                                        }`}
-                                    </div>
-                                  </div>
-
-                                  {/* Generated query */}
-                                  <div>
-                                    <div className="text-xs font-mono text-gray-500 mb-1 uppercase">
-                                      Generated Query
-                                    </div>
-                                    <code className="text-sm font-mono text-gray-200 break-words">
-                                      {correspondingQuery}
-                                    </code>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* FAISS Vector Search Indicator */}
-                              {hasContextReference && correspondingQuery && (
-                                <div className="bg-green-950/30 border border-green-800/50 rounded-lg p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Search className="w-3 h-3 text-green-400" />
-                                    <span className="text-xs font-mono text-green-400 uppercase">
-                                      FAISS Vector Search
-                                    </span>
-                                  </div>
-                                  <div className="text-xs font-mono text-green-300 space-y-1">
-                                    <span>
-                                      Embedding similarity search on HotpotQA
-                                      dataset
-                                    </span>
-                                    <br />
-                                    <span>
-                                      Retrieved {quotes.length} relevant text
-                                      segments
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Evidence snippets without FAISS labels */}
-                              {quotes.length > 0 && (
-                                <div className="bg-blue-950/30 border border-blue-800/50 rounded-lg p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Terminal className="w-3 h-3 text-blue-400" />
-                                    <span className="text-xs font-mono text-blue-400 uppercase">
-                                      Retrieved Evidence
-                                    </span>
-                                  </div>
-                                  {quotes.map((quote, qIndex) => (
-                                    <div
-                                      key={qIndex}
-                                      className="bg-gray-950/60 border-l-2 border-blue-500/50 pl-3 py-2 mb-2 last:mb-0"
-                                    >
-                                      <code className="text-xs font-mono text-blue-300 block">
-                                        {quote.replace(/"/g, "")}
-                                      </code>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Step result - shows what was determined */}
-                              <div className="bg-gray-950/50 border border-gray-800 rounded-lg p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <CheckCircle className="w-3 h-3 text-green-500" />
-                                  <span className="text-xs font-mono text-green-400 uppercase">
-                                    Step Result
+                          {/* Evidence summary */}
+                          {response.evidence_summaries &&
+                            response.evidence_summaries[index] && (
+                              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <FileText className="w-4 h-4 text-yellow-400" />
+                                  <span className="text-xs font-mono text-yellow-400 uppercase">
+                                    Evidence Summary
                                   </span>
                                 </div>
                                 <p className="text-sm font-mono text-gray-300 leading-relaxed">
-                                  {/* Extract the key finding from evidence or use a generic result */}
-                                  {quotes.length > 0 && quotes[0]
-                                    ? // If we have evidence, show the key fact extracted
-                                      quotes[0]
-                                        .replace(/"/g, "")
-                                        .split(".")[0] +
-                                      (quotes[0].includes(".") ? "." : "")
-                                    : cleanReasoning
-                                    ? // If no evidence but we have reasoning, show that
-                                      cleanReasoning
-                                    : // Fallback
-                                      `Information gathered for step ${
-                                        index + 1
-                                      }`}
+                                  {response.evidence_summaries[index]}
                                 </p>
                               </div>
+                            )}
 
-                              {/* Flow indicator to next hop */}
-                              {index < response.queries_used.length - 1 && (
-                                <div className="flex items-center justify-center py-2">
-                                  <div className="flex items-center gap-2 text-xs font-mono text-gray-600 bg-gray-800/50 px-3 py-1 rounded-full border border-gray-700">
-                                    <span>TRIGGERS NEXT HOP</span>
-                                    <ArrowRight className="w-3 h-3" />
-                                  </div>
-                                </div>
-                              )}
+                          {/* Hop conclusion */}
+                          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <CheckCircle className="w-4 h-4 text-purple-400" />
+                              <span className="text-xs font-mono text-purple-400 uppercase">
+                                Hop Conclusion
+                              </span>
                             </div>
+                            <p className="text-sm font-mono text-gray-300">
+                              {(response.hop_conclusions &&
+                                response.hop_conclusions[index]) ||
+                                "No conclusion recorded for this hop"}
+                            </p>
                           </div>
+
+                          {/* Flow to next hop */}
+                          {index < response.queries_used.length - 1 && (
+                            <div className="flex items-center justify-center py-2">
+                              <div className="flex items-center gap-2 text-xs font-mono text-gray-600 bg-gray-800/50 px-3 py-1 rounded-full border border-gray-700">
+                                <span>TRIGGERS NEXT HOP</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      );
-                    })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Pipeline summary */}

@@ -26,7 +26,7 @@ class QAService:
     def _initialize(self):
         """Initialize the QA system"""
         if self._qa_system is None:
-            # Initialize the language model but don't configure globally yet
+
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key:
                 raise Exception("Set ANTHROPIC_API_KEY environment variable")
@@ -40,20 +40,16 @@ class QAService:
             retriever_service = RetrieverService()
             retriever = retriever_service.get_retriever()
 
-            # Create QA system but don't configure DSPy globally yet
             self._qa_system = QA(retriever, max_hops=3)
             logger.info("QA system initialized")
 
     async def answer_question(self, question: str, max_hops: Optional[int] = None):
         """Process a question and return the answer"""
-        # Use dspy.context for async environments
         with dspy.context(lm=self._lm, async_max_workers=4):
             if max_hops:
                 self._qa_system.max_hops = max_hops
 
-            # Make the QA system async-compatible
             async_qa_system = dspy.asyncify(self._qa_system)
-
             start_time = time.time()
             result = await async_qa_system(question)
             processing_time = time.time() - start_time
@@ -62,8 +58,11 @@ class QAService:
                 "question": question,
                 "answer": result.answer,
                 "confidence": result.confidence,
-                "reasoning_steps": result.reasoning_steps,
+                "reasoning_summary": result.reasoning_summary,
                 "queries_used": getattr(result, "queries_used", []),
+                "query_objectives": getattr(result, "query_objectives", []),
+                "evidence_summaries": getattr(result, "evidence_summaries", []),
+                "hop_conclusions": getattr(result, "hop_conclusions", []),
                 "num_hops": getattr(result, "num_hops", 0),
                 "processing_time": round(processing_time, 2),
             }

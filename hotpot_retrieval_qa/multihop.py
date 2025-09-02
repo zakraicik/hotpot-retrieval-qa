@@ -1,12 +1,10 @@
 import dspy
+import re
 import pydantic
 import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Configuration constants
-MAX_CONTEXT_LENGTH = 500000  # Adjust based on your model's context window
 
 
 def _is_in_async_context():
@@ -41,12 +39,17 @@ class QueryRewriter(dspy.Signature):
 
     Consider that you have a limited budget of retrieval hops. Plan your queries
     to gather the most important information first, as you may not use all queries.
+
+    Format your output as clean text without numbered lists or prefixes.
     """
 
     question = dspy.InputField(desc="Complex multi-hop question")
     max_hops = dspy.InputField(desc="Maximum number of retrieval hops available")
     search_queries = dspy.OutputField(
-        desc=f"Prioritized list of search queries (max {{max_hops}}), ordered by importance"
+        desc="Prioritized list of search queries (max {max_hops}), ordered by importance. Each query on a new line without numbers or prefixes."
+    )
+    query_objectives = dspy.OutputField(
+        desc="For each query, explain what information it aims to find (same order as search_queries). Each objective on a new line without numbers or prefixes."
     )
 
 
@@ -74,27 +77,68 @@ class ContextValidation(dspy.Signature):
     )
 
 
-class Summarizer(dspy.Signature):
-    """Summarize the retrieved chunks into a single chunk."""
+class EvidenceSummarizer(dspy.Signature):
+    """Summarize retrieved evidence for a specific query into a concise, readable format."""
 
-    chunks = dspy.InputField(desc="Retrieved document chunks")
-    summary = dspy.OutputField(desc="Summary of the retrieved chunks")
+    query = dspy.InputField(desc="The search query that retrieved this evidence")
+    objective = dspy.InputField(desc="What this query aimed to accomplish")
+    evidence_documents = dspy.InputField(desc="Raw evidence documents retrieved")
+    evidence_summary = dspy.OutputField(
+        desc="Concise 1-2 sentence summary of the key facts found in the evidence"
+    )
+
+
+class HopConclusion(dspy.Signature):
+    """Analyze what was learned from this retrieval hop."""
+
+    question = dspy.InputField(desc="Original question being answered")
+    query = dspy.InputField(desc="Search query executed for this hop")
+    objective = dspy.InputField(desc="What this hop aimed to accomplish")
+    retrieved_context = dspy.InputField(desc="Documents retrieved for this query")
+    conclusion = dspy.OutputField(
+        desc="What key information was learned from this hop, or 'No relevant information found' if unsuccessful"
+    )
+
+
+class FollowUpQuery(dspy.Signature):
+    question = dspy.InputField()
+    current_info = dspy.InputField()
+    queries_used = dspy.InputField(desc="Search queries already executed")
+    suggested_queries = dspy.InputField(
+        desc="Remaining suggested queries from initial planning"
+    )
+    next_query = dspy.OutputField(
+        desc="Next search query needed (can use suggestions or create new), or 'DONE' if sufficient. Return clean text without prefixes."
+    )
+    query_objective = dspy.OutputField(
+        desc="Brief explanation of what this query aims to find or accomplish. Return clean text without prefixes."
+    )
 
 
 class MultiHopReasoning(dspy.Signature):
-    """Perform multi-hop reasoning ONLY using the provided context. Do not use external knowledge."""
+    """
+    Perform multi-hop reasoning using the provided context to answer complex questions.
+
+    Connect information across retrieved documents to form logical conclusions.
+    Use reasonable inference when the context provides sufficient evidence, even if
+    not explicitly stated. Only say "Cannot answer" if there's truly insufficient
+    information to make a reasonable determination.
+
+    For example, if context shows someone is from Serbia and also shows languages
+    spoken in Serbia, you can reasonably infer the person's native language.
+    """
 
     question = dspy.InputField(
         desc="Complex question requiring multiple reasoning steps"
     )
     context = dspy.InputField(
-        desc="Retrieved and ranked documents - USE ONLY THIS INFORMATION"
+        desc="Retrieved and ranked documents from multiple search hops"
     )
-    reasoning_steps = dspy.OutputField(
-        desc="Step-by-step reasoning process using ONLY the provided context"
+    reasoning_summary = dspy.OutputField(
+        desc="Clear explanation of how you connected information from the context, including any reasonable inferences made"
     )
     answer = dspy.OutputField(
-        desc="Final answer based ONLY on the provided context. If context is insufficient, say 'Cannot answer based on provided context.'"
+        desc="Final answer based on the provided context and reasonable inferences. Make logical connections between facts when evidence supports it."
     )
     confidence = dspy.OutputField(desc="Confidence level: high, medium, or low")
 
@@ -112,22 +156,10 @@ class QA(dspy.Module):
         self.query_rewriter = dspy.ChainOfThought(QueryRewriter)
         self.reranker = dspy.ChainOfThought(ChunkReranker)
         self.reason = dspy.ChainOfThought(MultiHopReasoning)
-        self.summarizer = dspy.ChainOfThought(Summarizer)
+        self.evidence_summarizer = dspy.Predict(EvidenceSummarizer)
         self.validator = dspy.ChainOfThought(ContextValidation)
-
+        self.hop_concluder = dspy.Predict(HopConclusion)
         self.seen_content = set()
-
-        class FollowUpQuery(dspy.Signature):
-            question = dspy.InputField()
-            current_info = dspy.InputField()
-            queries_used = dspy.InputField(desc="Search queries already executed")
-            suggested_queries = dspy.InputField(
-                desc="Remaining suggested queries from initial planning"
-            )
-            next_query = dspy.OutputField(
-                desc="Next search query needed (can use suggestions or create new), or 'DONE' if sufficient"
-            )
-
         self.follow_up = dspy.Predict(FollowUpQuery)
 
     def _normalize_content(self, text):
@@ -142,9 +174,20 @@ class QA(dspy.Module):
                 self.seen_content.add(normalized)
         return unique_docs
 
+    def _clean_text(self, text):
+
+        if not text:
+            return text
+
+        cleaned = re.sub(r"^\d+\.\s*", "", text.strip())
+        return cleaned
+
     def forward(self, question):
         all_context = []
         queries_used = []
+        query_objectives = []
+        evidence_summaries = []
+        hop_conclusions = []
         self.seen_content.clear()
 
         rewrite_result = self.query_rewriter(question=question, max_hops=self.max_hops)
@@ -154,16 +197,29 @@ class QA(dspy.Module):
             if isinstance(rewrite_result.search_queries, str)
             else rewrite_result.search_queries
         )
-
-        search_queries = [q.strip() for q in search_queries if q.strip()]
+        search_queries = [self._clean_text(q) for q in search_queries if q.strip()]
         queries_to_use = search_queries[: self.max_hops]
+
+        rewriter_objectives = (
+            rewrite_result.query_objectives.split("\n")
+            if isinstance(rewrite_result.query_objectives, str)
+            else rewrite_result.query_objectives
+        )
+        rewriter_objectives = [
+            self._clean_text(obj) for obj in rewriter_objectives if obj.strip()
+        ]
 
         current_query = queries_to_use[0] if queries_to_use else question
         remaining_suggestions = queries_to_use[1:] if len(queries_to_use) > 1 else []
 
+        current_objective = (
+            rewriter_objectives[0]
+            if rewriter_objectives
+            else "Find initial information to answer the question"
+        )
+
         for hop in range(self.max_hops):
             docs = self.retriever.retrieve(current_query, k=10)
-
             unique_docs = self._deduplicate_docs(docs)
 
             if not unique_docs:
@@ -190,7 +246,6 @@ class QA(dspy.Module):
 
             try:
                 ranked_chunks = rerank_result.ranked_chunks
-
                 if not isinstance(ranked_chunks, list) or not ranked_chunks:
                     logger.warning("Invalid reranking result, using original order")
                     raise ValueError("Invalid ranked_chunks format")
@@ -214,21 +269,28 @@ class QA(dspy.Module):
                 logger.warning(f"Reranking parse error: {e}, using original order")
                 context_text = "\n".join([doc["document"] for doc in docs[:5]])
 
+            evidence_summary_result = self.evidence_summarizer(
+                query=current_query,
+                objective=current_objective,
+                evidence_documents=context_text,
+            )
+
+            hop_conclusion_result = self.hop_concluder(
+                question=question,
+                query=current_query,
+                objective=current_objective,
+                retrieved_context=context_text,
+            )
+
             all_context.append(context_text)
             queries_used.append(current_query)
-
-            combined_context = "\n---\n".join(all_context)
-            if len(combined_context) > MAX_CONTEXT_LENGTH:
-                logger.info(
-                    f"Context length ({len(combined_context)}) exceeds limit, summarizing..."
-                )
-                summary_result = self.summarizer(chunks=combined_context)
-                all_context = [summary_result.summary]
-                combined_context = summary_result.summary
+            query_objectives.append(current_objective)
+            evidence_summaries.append(evidence_summary_result.evidence_summary)
+            hop_conclusions.append(hop_conclusion_result.conclusion)
 
             follow_up_result = self.follow_up(
                 question=question,
-                current_info=combined_context,
+                current_info=evidence_summaries,
                 queries_used=queries_used,
                 suggested_queries=remaining_suggestions,
             )
@@ -236,7 +298,8 @@ class QA(dspy.Module):
             if follow_up_result.next_query == "DONE" or hop == self.max_hops - 1:
                 break
 
-            current_query = follow_up_result.next_query
+            current_query = self._clean_text(follow_up_result.next_query)
+            current_objective = self._clean_text(follow_up_result.query_objective)
 
             if remaining_suggestions and current_query in remaining_suggestions:
                 remaining_suggestions.remove(current_query)
@@ -251,8 +314,11 @@ class QA(dspy.Module):
         return dspy.Prediction(
             question=question,
             queries_used=queries_used,
+            query_objectives=query_objectives,
+            evidence_summaries=evidence_summaries,
+            hop_conclusions=hop_conclusions,
             rewritten_queries=search_queries,
-            reasoning_steps=result.reasoning_steps,
+            reasoning_summary=result.reasoning_summary,
             answer=result.answer,
             confidence=result.confidence,
             num_hops=len(queries_used),
