@@ -19,7 +19,11 @@ def setup_dspy():
         return False
 
     lm = dspy.LM(
-        model="anthropic/claude-3-haiku-20240307", api_key=api_key, max_tokens=1500
+        model="anthropic/claude-3-haiku-20240307",
+        api_key=api_key,
+        max_tokens=800,
+        # claude-3-haiku-20240307
+        # claude-3-7-sonnet-20250219
     )
     dspy.configure(lm=lm)
     logging.info("✅ DSPy configured")
