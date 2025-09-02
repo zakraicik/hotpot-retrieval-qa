@@ -58,22 +58,31 @@ This creates the required files:
 
 **Note**: Using all training data provides better coverage than a limited sample
 
-### Step 1: Interactive Usage
+### Step 1: Launch the backend
 
 Start Python and interact with the system directly:
 
 ```bash
-poetry run python
+cd hotpot_retrieval_qa
+fastapi dev main.py
 ```
 
-```python
->>> from hotpot_retrieval_qa.retrieval import Retrieval
->>> from hotpot_retrieval_qa.multihop import QA
->>> retriever = Retrieval()
->>> qa = QA(retriever)
+### Step 2: Launch the front end in a seprate terminal
 
->>> result = qa("What nationality is the director of Lagaan?")
+```bash
+cd frontend
+npm run dev
 ```
+
+### Step 3: Navigate to http://localhost:3000/
+
+![Landing Page](landing-page.png)
+
+### Step 4: Ask away!
+
+Please note, the ability of the system to hop around is dependent on the context. The system is strictly limited to providing answers that can be found in the context (as opposed to using it's knowledge from training).
+
+![Landing Page](sample-response.png)
 
 ## How It Works
 
