@@ -37,10 +37,9 @@ export default function Home() {
 
   const exampleQuestions = [
     "What nationality is the director of Lagaan?",
-    "What is the capital of the country where Mount Everest is located?",
+    "In which American football game was Malcolm Smith named Most Valuable player?",
     "What movie came out first? Titanic or Interstellar?",
     "Who was the president of the United States when the Eiffel Tower was built?",
-    "What language is spoken in the birthplace of Tesla?",
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
