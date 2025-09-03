@@ -134,13 +134,12 @@ class QA(dspy.Module):
         self.hop_processor = dspy.ChainOfThought(HopProcessor)
         self.reason = dspy.ChainOfThought(MultiHopReasoning)
 
-        # Pre-initialize vectorizer with a larger vocabulary for better reuse
         self.vectorizer = TfidfVectorizer(
             stop_words="english",
-            max_features=2000,  # Increased for better quality
-            ngram_range=(1, 2),  # Include bigrams for better matching
-            min_df=1,  # Allow rare terms
-            sublinear_tf=True,  # Use log scaling for better performance
+            max_features=2000,
+            ngram_range=(1, 2),
+            min_df=1,
+            sublinear_tf=True,
         )
         self.vectorizer_fitted = False
         self.seen_content = set()
@@ -171,37 +170,28 @@ class QA(dspy.Module):
             if not docs:
                 return []
 
-            # Limit document length to prevent slowdowns
-            MAX_DOC_LENGTH = 1000  # characters
+            MAX_DOC_LENGTH = 1000
             doc_texts = [doc["document"][:MAX_DOC_LENGTH] for doc in docs]
 
-            # Add question to corpus for comparison
             all_texts = [question] + doc_texts
 
-            # Use transform if already fitted, otherwise fit_transform
-            if (
-                self.vectorizer_fitted and len(all_texts) <= 50
-            ):  # Reuse for small batches
+            if self.vectorizer_fitted and len(all_texts) <= 50:
                 try:
                     tfidf_matrix = self.vectorizer.transform(all_texts)
                 except:
-                    # Fallback to refit if transform fails
                     tfidf_matrix = self.vectorizer.fit_transform(all_texts)
                     self.vectorizer_fitted = True
             else:
                 tfidf_matrix = self.vectorizer.fit_transform(all_texts)
                 self.vectorizer_fitted = True
 
-            # Calculate cosine similarity
             question_vector = tfidf_matrix[0:1]
             doc_vectors = tfidf_matrix[1:]
 
             similarities = cosine_similarity(question_vector, doc_vectors).flatten()
 
-            # Get top indices
             ranked_indices = np.argsort(similarities)[::-1]
 
-            # Return ranked documents
             ranked_docs = []
             for i in ranked_indices[:top_k]:
                 doc = docs[i].copy()
@@ -220,7 +210,7 @@ class QA(dspy.Module):
 
     def _format_chunks_for_processing(self, docs):
         """Optimized formatting with length limits."""
-        MAX_CHUNK_LENGTH = 500  # Limit chunk length to speed up LLM processing
+        MAX_CHUNK_LENGTH = 500
 
         formatted_chunks = []
         for doc in docs:
@@ -244,13 +234,11 @@ class QA(dspy.Module):
         hop_conclusions = []
         self.seen_content.clear()
 
-        # Step 1: Query planning
         logger.info("Planning search queries...")
         plan_start = time.time()
         rewrite_result = self.query_rewriter(question=question, max_hops=self.max_hops)
         logger.info(f"Query planning took {time.time() - plan_start:.2f}s")
 
-        # Parse queries
         search_queries = (
             rewrite_result.search_queries.split("\n")
             if isinstance(rewrite_result.search_queries, str)
@@ -268,7 +256,6 @@ class QA(dspy.Module):
             self._clean_text(obj) for obj in rewriter_objectives if obj.strip()
         ]
 
-        # Initialize
         current_query = queries_to_use[0] if queries_to_use else question
         remaining_queries = queries_to_use[1:] if len(queries_to_use) > 1 else []
         current_objective = (
@@ -277,12 +264,10 @@ class QA(dspy.Module):
             else "Find initial information to answer the question"
         )
 
-        # Step 2: Retrieval hops
         for hop in range(self.max_hops):
             hop_start = time.time()
             logger.info(f"Processing hop {hop + 1}: {current_query}")
 
-            # Retrieval
             docs = self.retriever.retrieve(current_query, k=10)
             unique_docs = self._deduplicate_docs(docs)
 
@@ -292,16 +277,13 @@ class QA(dspy.Module):
                 )
                 break
 
-            # Fast similarity ranking
             ranked_docs = self._rank_chunks_by_similarity(
                 question, unique_docs, top_k=5
             )
             context_text = "\n".join([doc["document"] for doc in ranked_docs])
 
-            # Optimized formatting
             ranked_chunks_text = self._format_chunks_for_processing(ranked_docs)
 
-            # LLM processing
             llm_start = time.time()
             hop_result = self.hop_processor(
                 original_question=question,
@@ -315,14 +297,12 @@ class QA(dspy.Module):
             )
             logger.info(f"Hop {hop + 1} LLM call took {time.time() - llm_start:.2f}s")
 
-            # Store results
             all_context.append(context_text)
             queries_used.append(current_query)
             query_objectives.append(current_objective)
             evidence_summaries.append(hop_result.evidence_summary)
             hop_conclusions.append(hop_result.hop_conclusion)
 
-            # Check stopping conditions
             if (
                 hop_result.next_query == "DONE"
                 or hop_result.confidence_assessment == "sufficient"
@@ -333,7 +313,6 @@ class QA(dspy.Module):
                 )
                 break
 
-            # Prepare next hop
             current_query = self._clean_text(hop_result.next_query)
             current_objective = self._clean_text(hop_result.next_objective)
 
@@ -342,7 +321,6 @@ class QA(dspy.Module):
 
             logger.info(f"Hop {hop + 1} total time: {time.time() - hop_start:.2f}s")
 
-        # Step 3: Final reasoning
         logger.info("Performing final multi-hop reasoning...")
         final_start = time.time()
         final_context = "\n---\n".join(all_context)
