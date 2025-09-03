@@ -2,6 +2,7 @@ import os
 import logging
 import pickle
 import faiss
+import time
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
@@ -25,10 +26,16 @@ class Retrieval:
 
     def _load_index(self):
         try:
+
+            start_time = time.time()
+
             self.index = faiss.read_index(f"{self.cache_dir}/faiss.index")
             with open(f"{self.cache_dir}/documents.pkl", "rb") as f:
                 self.documents = pickle.load(f)
-            logging.info(f"Loaded index with {len(self.documents)} documents")
+            elapsed = time.time() - start_time
+            logging.info(
+                f"Loaded index with {len(self.documents)} documents in {elapsed:.2f} seconds"
+            )
 
         except FileNotFoundError as e:
             logging.error(f"Index files not found. Run build_index.py first.")
@@ -38,6 +45,8 @@ class Retrieval:
         if self.index is None or self.documents is None:
             logging.error(f"Index files not found. Run build_index.py first.")
             raise
+
+        start_time = time.time()
 
         query_embedding = self.embedder.encode([query])
         query_embedding = query_embedding / np.linalg.norm(
@@ -56,5 +65,10 @@ class Retrieval:
                         "index": int(idx),
                     }
                 )
+
+        elapsed = time.time() - start_time
+        logging.info(
+            f"Retrieved {len(results)} results for query '{query}' in {elapsed:.2f} seconds"
+        )
 
         return results
