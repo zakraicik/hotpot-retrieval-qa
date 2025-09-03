@@ -19,12 +19,13 @@ def setup_dspy():
         return False
 
     lm = dspy.LM(
-        model="anthropic/claude-3-haiku-20240307",
-        api_key=api_key,
+        model="openai/LFM2-700M",  # Add openai/ prefix
+        api_base="http://localhost:8080/v1",  # Note the /v1 suffix
+        api_key="not-needed",  # Can be any string for local server
         max_tokens=800,
-        # claude-3-haiku-20240307
-        # claude-3-7-sonnet-20250219
+        temperature=0.0,
     )
+
     dspy.configure(lm=lm)
     logging.info("✅ DSPy configured")
     return True
