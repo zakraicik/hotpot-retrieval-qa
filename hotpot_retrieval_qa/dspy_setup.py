@@ -19,9 +19,9 @@ def setup_dspy():
         return False
 
     lm = dspy.LM(
-        model="anthropic/claude-3-haiku-20240307",
+        model="anthropic/claude-3-7-sonnet-20250219",
         api_key=api_key,
-        max_tokens=800,
+        max_tokens=1500,
         # claude-3-haiku-20240307
         # claude-3-7-sonnet-20250219
     )
